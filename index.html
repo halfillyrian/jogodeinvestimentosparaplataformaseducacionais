@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jornada dos Investimentos</title>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        font-family: "Franklin Gothic Medium", sans-serif;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+      #character-select {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        height: 100vh;
+        background-image: url(fundoinicial.png);
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: 100% 100%;
+      }
+      .character-option {
+        margin: 20px;
+        text-align: center;
+        cursor: pointer;
+      }
+      .character-option img {
+        width: 150px;
+        height: auto;
+        border: 4px solid transparent;
+        border-radius: 10px;
+      }
+      .character-option:hover img {
+        border-color: #4caf50;
+      }
+      #player-name-input {
+        margin-bottom: 20px;
+        font-size: 16px;
+        padding: 10px;
+        width: 300px;
+        text-align: center;
+      }
+      #game-container {
+        display: none;
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        background-image: url(fundojogo.png);
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: 100% 100%;
+        background-position: center;
+      }
+
+      #dice-button,
+      #restart-button {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 20px;
+        font-size: 18px;
+        background-color: #ffd700;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        z-index: 2;
+      }
+      #restart-button {
+        display: none;
+        background-color: #4caf50;
+        color: white;
+      }
+      #saldo-display {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        z-index: 2;
+      }
+      #overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3;
+        display: none;
+      }
+      #popup {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        z-index: 6;
+        display: none;
+        max-width: 90%;
+      }
+      #popup-buttons button {
+        margin-top: 10px;
+        margin-right: 10px;
+        padding: 8px 12px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      /* Animação de fade */
+      .fade-in {
+        animation: fadeIn 0.5s forwards;
+      }
+
+      .fade-out {
+        animation: fadeOut 0.5s forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      @keyframes jump {
+        0% {
+          transform: translate(-50%, -50%) translateY(0);
+        }
+        25% {
+          transform: translate(-50%, -50%) translateY(-20px);
+        }
+        50% {
+          transform: translate(-50%, -50%) translateY(0);
+        }
+        75% {
+          transform: translate(-50%, -50%) translateY(-10px);
+        }
+        100% {
+          transform: translate(-50%, -50%) translateY(0);
+        }
+      }
+
+      #player {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background-color: #fff;
+        background-size: cover;
+        background-repeat: no-repeat;
+        transition: top 1s, left 1s;
+        z-index: 4;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        transform: translate(-50%, -50%);
+      }
+
+      #player.moving {
+        animation: jump 1s ease forwards;
+      }
+
+      @keyframes jump {
+        0% {
+          transform: translate(-50%, -50%) translateY(0);
+        }
+        25% {
+          transform: translate(-50%, -50%) translateY(-20px);
+        }
+        50% {
+          transform: translate(-50%, -50%) translateY(0);
+        }
+        75% {
+          transform: translate(-50%, -50%) translateY(-10px);
+        }
+        100% {
+          transform: translate(-50%, -50%) translateY(0);
+        }
+      }
+
+      #player {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background-color: #fff;
+        background-size: cover;
+        background-repeat: no-repeat;
+        transition: top 1s, left 1s;
+        z-index: 4;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        transform: translate(-50%, -50%);
+      }
+
+      #player.moving {
+        animation: jump 1s ease forwards;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="character-select">
+      <h2>Digite seu nome e escolha seu personagem:</h2>
+      <input type="text" id="player-name-input" placeholder="Seu nome" />
+      <div style="display: flex; justify-content: center">
+        <div class="character-option" onclick="escolherPersonagem('Roberto')">
+          <img src="menino.png" alt="Roberto" />
+          <p>Roberto</p>
+        </div>
+        <div class="character-option" onclick="escolherPersonagem('Alana')">
+          <img src="menina.png" alt="Alana" />
+          <p>Alana</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="game-container">
+      <div id="player"></div>
+      <button id="dice-button">🎲 Jogar o dado</button>
+      <button id="restart-button">🔁 Reiniciar Jogo</button>
+      <div id="saldo-display">💰 Saldo: <span id="saldo">100</span> moedas</div>
+      <div id="overlay"></div>
+      <div id="popup">
+        <p id="popup-text"></p>
+        <div id="popup-buttons"></div>
+      </div>
+    </div>
+
+    <script>
+      const player = document.getElementById("player");
+      const saldoSpan = document.getElementById("saldo");
+      const popup = document.getElementById("popup");
+      const overlay = document.getElementById("overlay");
+      const popupText = document.getElementById("popup-text");
+      const popupButtons = document.getElementById("popup-buttons");
+      let playerName = "";
+      let position = 0;
+      let saldo = 100;
+
+      const path = [
+        { x: 20, y: 15 },
+        { x: 22, y: 30 },
+        { x: 23, y: 40 },
+        { x: 23, y: 50 },
+        { x: 21, y: 60 },
+        { x: 20, y: 70 },
+        { x: 20, y: 80 },
+        { x: 30, y: 88 },
+        { x: 40, y: 88 },
+        { x: 40, y: 75 },
+        { x: 40, y: 65 },
+        { x: 40, y: 55 },
+        { x: 40, y: 45 },
+        { x: 35, y: 35 },
+        { x: 35, y: 25 },
+        { x: 40, y: 13 },
+        { x: 50, y: 13 },
+        { x: 60, y: 16 },
+        { x: 60, y: 25 },
+        { x: 60, y: 35 },
+        { x: 56, y: 45 },
+        { x: 55, y: 55 },
+        { x: 53, y: 65 },
+        { x: 50, y: 75 },
+        { x: 55, y: 85 },
+        { x: 65, y: 88 },
+        { x: 70, y: 82 },
+        { x: 70, y: 75 },
+        { x: 70, y: 65 },
+        { x: 70, y: 55 },
+        { x: 70, y: 45 },
+        { x: 70, y: 35 },
+        { x: 65, y: 25 },
+        { x: 70, y: 15 },
+        { x: 80, y: 15 },
+        { x: 85, y: 15 },
+        { x: 88, y: 25 },
+        { x: 84, y: 35 },
+        { x: 84, y: 45 },
+        { x: 82, y: 52 },
+        { x: 82, y: 68 },
+        { x: 84, y: 85 },
+      ];
+
+      /*     path.forEach((pos) => {
+        const dot = document.createElement("div");
+        dot.style.position = "absolute";
+        dot.style.width = "10px";
+        dot.style.height = "10px";
+        dot.style.backgroundColor = "red";
+        dot.style.borderRadius = "50%";
+        dot.style.left = pos.x + "%";
+        dot.style.top = pos.y + "%";
+        dot.style.transform = "translate(-50%, -50%)";
+        dot.style.zIndex = "1";
+        document.getElementById("game-container").appendChild(dot);
+      });
+*/
+      function escolherPersonagem(personagem) {
+        playerName = document.getElementById("player-name-input").value.trim();
+        if (!playerName) {
+          alert("Por favor, digite seu nome antes de escolher o personagem.");
+          return;
+        }
+        const img = personagem === "Roberto" ? "menino.png" : "menina.png";
+
+        document.getElementById("character-select").style.display = "none";
+        document.getElementById("game-container").style.display = "block";
+        player.style.backgroundImage = `url(${img})`;
+        const start = path[0];
+        player.style.left = start.x + "%";
+        player.style.top = start.y + "%";
+      }
+
+      function atualizarSaldo(valor) {
+        saldo += valor;
+        saldoSpan.innerText = saldo;
+      }
+
+      function moverJogador(passos) {
+        position += passos;
+        if (position >= path.length) position = path.length - 1;
+        const pos = path[position];
+
+        player.classList.add("moving"); // Adiciona a animação
+
+        player.style.left = pos.x + "%";
+        player.style.top = pos.y + "%";
+
+        setTimeout(() => {
+          player.classList.remove("moving"); // Remove a animação depois de terminar
+          mostrarEvento(position);
+        }, 1000); // Mesmo tempo da animação
+      }
+
+      function mostrarEvento(pos) {
+        overlay.style.display = "block";
+        popup.style.display = "block";
+        popupButtons.innerHTML = "";
+        if (pos === 3) {
+          popupText.innerText =
+            "Você encontrou uma oportunidade de investir em swaps. Deseja investir 10 moedas?";
+          criarDecisao(10, 15);
+        } else if (pos === 8) {
+          popupText.innerText =
+            "Você encontrou um precatório. Deseja investir 5 moedas? (Pode ganhar 15 moedas ou nada)";
+          criarDecisaoChance(5, 15, 0.5);
+        } else if (pos === 12) {
+          popupText.innerText =
+            "NFT raro à venda! Investir 15 moedas? Pode ganhar 25 moedas!";
+          criarDecisaoChance(15, 25, 0.7);
+        } else if (position === path.length - 1) {
+          const mensagem = `🏁 Fim da jornada!\nNome do jogador: ${playerName}\nMoedas acumuladas: ${saldo}`;
+          popupText.innerText = mensagem;
+          const copiarBtn = document.createElement("button");
+          copiarBtn.innerText = "📋 Copiar mensagem";
+          copiarBtn.onclick = () => {
+            navigator.clipboard.writeText(mensagem);
+            copiarBtn.innerText = "✅ Copiado!";
+          };
+          popupButtons.appendChild(copiarBtn);
+          popupButtons.innerHTML +=
+            '<button onclick="reiniciarJogo()">🔁 Jogar Novamente</button>';
+          document.getElementById("dice-button").style.display = "none";
+          document.getElementById("restart-button").style.display =
+            "inline-block";
+        } else {
+          popupText.innerText =
+            "Continue sua jornada pelo mundo dos investimentos!";
+          popupButtons.innerHTML =
+            '<button onclick="fecharPopup()">Fechar</button>';
+        }
+      }
+
+      function criarDecisao(custo, ganho) {
+        const sim = document.createElement("button");
+        sim.innerText = "Sim";
+        sim.onclick = () => {
+          atualizarSaldo(-custo);
+          atualizarSaldo(ganho);
+          popupText.innerText = `Você investiu e ganhou ${ganho} moedas!`;
+          popupButtons.innerHTML =
+            '<button onclick="fecharPopup()">Fechar</button>';
+        };
+        const nao = document.createElement("button");
+        nao.innerText = "Não";
+        nao.onclick = fecharPopup;
+        popupButtons.appendChild(sim);
+        popupButtons.appendChild(nao);
+      }
+
+      function criarDecisaoChance(custo, ganho, chance) {
+        const sim = document.createElement("button");
+        sim.innerText = "Sim";
+        sim.onclick = () => {
+          atualizarSaldo(-custo);
+          if (Math.random() < chance) {
+            atualizarSaldo(ganho);
+            popupText.innerText = `Sucesso! Você ganhou ${ganho} moedas!`;
+          } else {
+            popupText.innerText =
+              "Infelizmente, seu investimento não deu retorno.";
+          }
+          popupButtons.innerHTML =
+            '<button onclick="fecharPopup()">Fechar</button>';
+        };
+        const nao = document.createElement("button");
+        nao.innerText = "Não";
+        nao.onclick = fecharPopup;
+        popupButtons.appendChild(sim);
+        popupButtons.appendChild(nao);
+      }
+
+      function fecharPopup() {
+        overlay.style.display = "none";
+        popup.style.display = "none";
+      }
+
+      function reiniciarJogo() {
+        position = 0;
+        saldo = 100;
+        saldoSpan.innerText = saldo;
+        player.style.left = path[0].x + "%";
+        player.style.top = path[0].y + "%";
+        document.getElementById("dice-button").style.display = "inline-block";
+        document.getElementById("restart-button").style.display = "none";
+        fecharPopup();
+
+        const gameContainer = document.getElementById("game-container");
+        const characterSelect = document.getElementById("character-select");
+
+        // Fade out do game container
+        gameContainer.classList.add("fade-out");
+
+        // Após a animação de fade-out terminar, troca para tela de seleção
+        setTimeout(() => {
+          gameContainer.style.display = "none";
+          gameContainer.classList.remove("fade-out");
+
+          characterSelect.style.display = "flex";
+          characterSelect.classList.add("fade-in");
+
+          // Limpar o nome e imagem do personagem
+          document.getElementById("player-name-input").value = "";
+          player.style.backgroundImage = "";
+        }, 500); // duração da animação (mesmo tempo do @keyframes)
+
+        // Remove fade-in depois para permitir reutilizar a animação
+        setTimeout(() => {
+          characterSelect.classList.remove("fade-in");
+        }, 1000);
+      }
+
+      document.getElementById("dice-button").addEventListener("click", () => {
+        const rolagem = Math.floor(Math.random() * 3) + 1;
+        moverJogador(rolagem);
+      });
+    </script>
+  </body>
+</html>
